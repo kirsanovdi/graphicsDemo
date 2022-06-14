@@ -1,0 +1,42 @@
+#version 330 core
+    out vec4 FragColor;
+
+    in vec2 texCoord;
+
+    in vec3 Normal;
+    in vec3 crntPos;
+
+    uniform sampler2D tex0;
+    uniform sampler2D tex1;
+
+    uniform vec3 lightPos[100];
+    uniform vec4 lightColor[100];
+    uniform int lightSize;
+    uniform float ambient;
+    uniform vec3 camPos;
+
+    float getIntensity(float dist){
+        return 1.0f/(0.01f * dist * dist + 0.005 * dist + 1.0f);
+    }
+
+    void main()
+    {
+         vec3 normal = normalize(Normal);
+         vec3 viewDirection = normalize(camPos - crntPos);
+
+         vec4 diffuse = vec4(0.0f, 0.0f, 0.0f, 0.0f), specular = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+         for(int i = 0; i < lightSize; i++){
+             vec3 lightVec = lightPos[i] - crntPos;
+             vec3 lightDirection = normalize(lightVec);
+
+             vec3 reflectionDirection = reflect(-lightDirection, normal);
+             float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
+             float dist = length(lightVec);
+             float intensity = pow(getIntensity(dist), 2);
+
+             specular += lightColor[i] * pow(specAmount * 0.5f, 2) * intensity;
+             diffuse += lightColor[i] * pow(max(dot(-normal, lightDirection), 0.0f), 2) * intensity;
+         }
+
+         FragColor = texture(tex0, texCoord) * (diffuse + ambient) + texture(tex1, texCoord) * (specular + ambient);
+    }
