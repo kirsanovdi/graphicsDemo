@@ -4,19 +4,18 @@ package graphics.translateObjects;
 import engine.Engine;
 import engine.entities.Block;
 import engine.entities.Line;
-import graphics.translateObjects.EBO;
-import graphics.translateObjects.VAO;
-import graphics.translateObjects.VBO;
+import graphics.RenderingType;
 import org.joml.Vector3f;
 
 public class DataTranslation {
 
     private final Engine engine;
 
-    private final int[] indicesRaw;
+    private final int[] indicesTextureRaw;
+    private final int[] indicesOutlineRaw;
     private final float[] cordsRaw;
 
-    private int sizeI = 0, sizeC = 0, verticesCount = 0;
+    private int sizeITexture = 0, sizeIOutline = 0, sizeC = 0, verticesCount = 0;
 
 
     private final VBO vertexBufferObject;
@@ -25,7 +24,8 @@ public class DataTranslation {
 
     public DataTranslation(Engine engine) {
         this.engine = engine;
-        indicesRaw = new int[20000000];
+        indicesTextureRaw = new int[20000000];
+        indicesOutlineRaw = new int[20000000];
         cordsRaw = new float[20000000];
 
         vertexArrayObject = new VAO();
@@ -33,7 +33,7 @@ public class DataTranslation {
         elementBufferObject = new EBO(this);
     }
 
-    public void update() {
+    public void update(RenderingType renderingType) {
         reset();
         for (Block block : engine.blocks.values()) {
             transferBlock(block);
@@ -46,7 +46,7 @@ public class DataTranslation {
 
         vertexArrayObject.bind();
         vertexBufferObject.bindRefresh();
-        elementBufferObject.bindRefresh();
+        elementBufferObject.bindRefresh(renderingType);
 
         vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 44, 0);
         vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 44, 12);
@@ -74,9 +74,23 @@ public class DataTranslation {
         return cords;
     }
 
-    public int[] getIndices() {
-        final int[] indices = new int[sizeI];
-        System.arraycopy(indicesRaw, 0, indices, 0, sizeI);
+    public int[] getIndices(RenderingType type){
+        return switch (type){
+            case Texture -> getTextureIndices();
+            case Outline -> getOutlineIndices();
+            default -> null;
+        };
+    }
+
+    private int[] getTextureIndices() {
+        final int[] indices = new int[sizeITexture];
+        System.arraycopy(indicesTextureRaw, 0, indices, 0, sizeITexture);
+        return indices;
+    }
+
+    private int[] getOutlineIndices() {
+        final int[] indices = new int[sizeIOutline];
+        System.arraycopy(indicesOutlineRaw, 0, indices, 0, sizeIOutline);
         return indices;
     }
 
@@ -84,23 +98,29 @@ public class DataTranslation {
      * Добавление нового пакета данных в массиы значений и индексов
      *
      * @param cords   массив добавляемых значений вершин
-     * @param indices массив добавляемых индексов
      */
-    private void transfer(float[] cords, int[] indices) {
+    private void transfer(float[] cords, int[] indicesTexture, int[] indicesOutline) {
         System.arraycopy(cords, 0, cordsRaw, sizeC, cords.length);
-        System.arraycopy(indices, 0, indicesRaw, sizeI, indices.length);
+        System.arraycopy(indicesTexture, 0, indicesTextureRaw, sizeITexture, indicesTexture.length);
+        System.arraycopy(indicesOutline, 0, indicesOutlineRaw, sizeIOutline, indicesOutline.length);
         sizeC += cords.length;
-        sizeI += indices.length;
+        sizeITexture += indicesTexture.length;
+        sizeIOutline += indicesOutline.length;
     }
 
     private void reset() {
-        sizeI = 0;
+        sizeITexture = 0;
+        sizeIOutline = 0;
         sizeC = 0;
         verticesCount = 0;
     }
 
-    public int indicesSize() {
-        return sizeI;
+    public int indicesSize(RenderingType type) {
+        return switch (type){
+            case Texture -> sizeITexture;
+            case Outline -> sizeIOutline;
+            default -> 0;
+        };
     }
 
     /**
@@ -136,11 +156,14 @@ public class DataTranslation {
                 b.x, b.y, b.z, xId + delta, yId,         kX, kY, kZ, cX, cY, cZ,
                 c.x, c.y, c.z, xId, yId,                 kX, kY, kZ, cX, cY, cZ,
         };
-        final int[] tempIndicesRaw = new int[]{
+        final int[] tempIndicesTextureRaw = new int[]{
+                verticesCount, verticesCount + 2, verticesCount + 1,
+        };
+        final int[] tempIndicesOutlineRaw = new int[]{
                 verticesCount, verticesCount + 2, verticesCount + 1,
         };
         verticesCount += 3;
-        transfer(tempCordsRaw, tempIndicesRaw);
+        transfer(tempCordsRaw, tempIndicesTextureRaw, tempIndicesOutlineRaw);
     }
     //1 3 2 a, b, c
     //1 4 3 a, d, b

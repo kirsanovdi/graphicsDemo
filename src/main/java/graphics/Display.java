@@ -136,36 +136,6 @@ public class Display {
         glfwShowWindow(window);
     }
 
-    private void translateLightPoints(Shader shader) {
-        int lightSize = glGetUniformLocation(shader.getId(), "lightSize");
-        int lightColor = glGetUniformLocation(shader.getId(), "lightColor");
-        int lightPos = glGetUniformLocation(shader.getId(), "lightPos");
-
-        Set<LightPoint> lightPoints = engine.lightPoints;
-        final int size = lightPoints.size();
-        float[] cords = new float[size * 3], colors = new float[size * 4];
-        int count = 0;
-        for (LightPoint point : lightPoints) {
-            colors[count * 4] = point.color.x;
-            colors[count * 4 + 1] = point.color.y;
-            colors[count * 4 + 2] = point.color.z;
-            colors[count * 4 + 3] = point.color.w;
-            cords[count * 3] = point.cord.x;
-            cords[count * 3 + 1] = point.cord.y;
-            cords[count * 3 + 2] = point.cord.z;
-            count++;
-        }
-
-        glUniform1i(lightSize, size);
-        glUniform4fv(lightColor, colors);
-        glUniform3fv(lightPos, cords);
-    }
-
-    private void translateAmbientLight(Shader shader) {
-        int ambLightPos = glGetUniformLocation(shader.getId(), "ambient");
-        glUniform1f(ambLightPos, ambLight);
-    }
-
     /**
      * Метод, содержащий цикл отрисовки окна
      */
@@ -190,45 +160,36 @@ public class Display {
         DataTranslation dataTranslation = new DataTranslation(engine);
 
         while (!glfwWindowShouldClose(window) && controller.status == Mode.RUNNING) {
-
-            dataTranslation.update();
-
-
+            controller.handleInput(window);
             glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
-
-            shader.activate();
-
-            controller.handleInput(window);
-            camera.Matrix(45.0f, 0.1f, 10000.0f, shader, "camMatrix");
-
-            translateLightPoints(shader);
-            translateAmbientLight(shader);
-
-            int camPos = glGetUniformLocation(shader.getId(), "camPos");
-            glUniform3fv(camPos, new float[]{camera.position.x, camera.position.y, camera.position.z});
-
-
             textureMap.bind();
             reflectMap.bind();
+
+            dataTranslation.update(RenderingType.Texture);
+            shader.activate();
+            shader.transferCamera(camera);
+            shader.translateLightPoints(engine.lightPoints);
+            shader.translateAmbientLight(ambLight);
             dataTranslation.setupVAO();
 
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
             glStencilMask(0xFF);
-            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(), GL_UNSIGNED_INT, 0);
+
+            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
 
             glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
             glStencilMask(0x00);
             glDisable(GL_DEPTH_TEST);
 
-            outline.activate();
-            dataTranslation.setupVAO();
 
-            camera.Matrix(45.0f, 0.1f, 10000.0f, outline, "camMatrix");
-            glUniform3fv(glGetUniformLocation(outline.getId(), "camPos"), new float[]{camera.position.x, camera.position.y, camera.position.z});
+            dataTranslation.update(RenderingType.Outline);
+            outline.activate();
+            outline.transferCamera(camera);
+            dataTranslation.setupVAO();
             glUniform1f(glGetUniformLocation(outline.getId(), "outlining"), 0.05f);
 
-            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Outline), GL_UNSIGNED_INT, 0);
 
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);

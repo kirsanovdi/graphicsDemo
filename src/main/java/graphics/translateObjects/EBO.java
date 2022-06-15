@@ -1,5 +1,7 @@
 package graphics.translateObjects;
 
+import graphics.RenderingType;
+
 import static org.lwjgl.opengl.GL46.*;
 
 /**
@@ -14,13 +16,13 @@ public class EBO {
         this.dataTranslation = dataTranslation;
     }
 
-    protected void bindRefresh() {
+    protected void bindRefresh(RenderingType type) {
         bind();
-        refresh();
+        refresh(type);
     }
 
-    protected void refresh() {
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, dataTranslation.getIndices(), GL_DYNAMIC_DRAW);
+    protected void refresh(RenderingType type) {
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, dataTranslation.getIndices(type), GL_DYNAMIC_DRAW);
     }
 
     protected void bind() {

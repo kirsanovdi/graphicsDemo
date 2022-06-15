@@ -1,5 +1,7 @@
 package engine.entities;
 
+import graphics.Camera;
+import graphics.Shader;
 import org.joml.Vector3i;
 
 import java.util.Arrays;
@@ -7,7 +9,7 @@ import java.util.Arrays;
 /**
  * Блок, основной элемент при создании сцены
  */
-public class Block {
+public class Block implements Entity{
 
     public Vector3i cord;
     public final int id;
@@ -40,5 +42,15 @@ public class Block {
     public String toString() {
         return "Block: cord=[\t" + cord.x + '\t' + cord.y + '\t' + cord.z + "\t],\tid=" + id +
                 ",\tsideIds=" + Arrays.toString(sideIds);
+    }
+
+    @Override
+    public void drawIndividually(Shader shader, Camera camera) {
+
+    }
+
+    @Override
+    public void draw() {
+
     }
 }
