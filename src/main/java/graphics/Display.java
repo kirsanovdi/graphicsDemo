@@ -149,6 +149,7 @@ public class Display {
 
         Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader");
         Shader outline = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader");
+        Shader frame = new Shader("src/main/resources/code/frameVertexShader", "src/main/resources/code/frameFragmentShader");
 
         Texture textureMap = new Texture("src/main/resources/img/texturePack.png", 0, 4096, 4096);
         textureMap.texUnit(shader, "tex0");
@@ -156,11 +157,54 @@ public class Display {
         Texture reflectMap = new Texture("src/main/resources/img/texturePackSpecularMap.png", 1, 4096, 4096);
         reflectMap.texUnit(shader, "tex1");
 
-
         DataTranslation dataTranslation = new DataTranslation(engine);
+
+        int FBO = glGenFramebuffers();
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+        int framebufferTexture = glGenTextures();
+        glActiveTexture(GL_TEXTURE0 + 2);
+        glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, (double[]) null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferTexture, 0);
+
+        int RBO = glGenRenderbuffers();
+        glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+        final float[] rectangleVertices = new float[]{
+                -1.0f,  1.0f,  0.0f,  1.0f,
+                -1.0f, -1.0f,  0.0f,  0.0f,
+                 1.0f, -1.0f,  1.0f,  0.0f,
+
+                -1.0f,  1.0f,  0.0f,  1.0f,
+                 1.0f, -1.0f,  1.0f,  0.0f,
+                 1.0f,  1.0f,  1.0f,  1.0f,
+        };
+
+        int rectVAO = glGenVertexArrays();
+        int rectVBO = glGenBuffers();
+        glBindVertexArray(rectVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+        glBufferData(GL_ARRAY_BUFFER, rectangleVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, false, 16, 0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 16, 8);
+
+        frame.activate();
+        glUniform1i(glGetUniformLocation(frame.getId(), "screenTexture"), 2);
 
         while (!glfwWindowShouldClose(window) && controller.status == Mode.RUNNING) {
             controller.handleInput(window);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
             glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
             textureMap.bind();
@@ -186,13 +230,22 @@ public class Display {
             dataTranslation.update(RenderingType.Outline);
             outline.activate();
             outline.transferCamera(camera);
-            dataTranslation.setupVAO();
             glUniform1f(glGetUniformLocation(outline.getId(), "outlining"), 0.05f);
+            dataTranslation.setupVAO();
 
             glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Outline), GL_UNSIGNED_INT, 0);
 
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glEnable(GL_DEPTH_TEST);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            frame.activate();
+            glBindVertexArray(rectVAO);
+            glDisable(GL_DEPTH_TEST);
+            glActiveTexture(GL_TEXTURE0 + 2);
+            glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
             glEnable(GL_DEPTH_TEST);
 
             glfwSwapBuffers(window);
