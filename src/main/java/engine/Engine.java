@@ -1,5 +1,6 @@
 package engine;
 
+import controller.Commands;
 import controller.Controller;
 import controller.Mode;
 import engine.entities.Block;
@@ -52,10 +53,6 @@ public class Engine {
         return result;
     }
 
-    public static Vector3i getVector3i(Vector3f v3f) {
-        return new Vector3i((int) v3f.x + (v3f.x < 0 ? -1 : 0), (int) v3f.y + (v3f.y < 0 ? -1 : 0), (int) v3f.z + (v3f.z < 0 ? -1 : 0));
-    }
-
     public boolean checkCord(Vector3i vector3i) {
         return blocks.containsKey(vector3i) && blocks.get(vector3i).id != -1;
     }
@@ -93,19 +90,47 @@ public class Engine {
         }
     }
 
+    protected static Vector3i getVector3i(Vector3f v3f) {
+        return new Vector3i((int) v3f.x + (v3f.x < 0 ? -1 : 0), (int) v3f.y + (v3f.y < 0 ? -1 : 0), (int) v3f.z + (v3f.z < 0 ? -1 : 0));
+    }
+
+    public void rayTrace(Vector3f orientation, Vector3f position, Commands command) {
+        final Vector3i startPosI = getVector3i(position);
+        final Vector3f dir = new Vector3f(orientation).div(10000);
+
+
+        Vector3i lastCheckedPos = null;
+        Vector3i lastCord = null;
+        Vector3i selectedCord = null;
+        Vector3f selectedFloatCord = null;
+
+        for (int i = 0; i < 100 * 10000; i++) {
+            position.add(dir);
+            Vector3i posI = getVector3i(position);
+            if (checkCord(posI)) {
+                if (lastCheckedPos != null && !lastCheckedPos.equals(startPosI)) {
+                    lastCord = lastCheckedPos;
+                    selectedCord = posI;
+                    selectedFloatCord = position;
+                }
+                break;
+            }
+            lastCheckedPos = posI;
+        }
+        int sideId = 1;
+        if(command == Commands.ADD && lastCord != null) {
+            blocks.put(lastCord, new Block(lastCord, 0, new int[]{sideId, sideId, sideId, sideId, sideId, sideId}));
+            updateBlockSpace(lastCord);
+        }
+        if(command == Commands.REMOVE && selectedCord != null) {
+            blocks.remove(selectedCord);
+            updateBlockSpace(selectedCord);
+        }
+    }
+
     public void run() {
         System.out.println("EngineRuntime started");
         while (controller.status == Mode.RUNNING) {
-            //rayTrace();
-
-            /*model.handleInput(rtController.commandsSet, getNearest(2));
-            this.handleInput(rtController.commandsSet);
-
-            if(settings.debug) synchronized (lines) {
-                lines.clear();
-                if (selectedFloatCord != null)
-                    lines.add(new Line(model.getCameraPosition().add(model.getOrientation().normalize().cross(new Vector3f(0.0f, 1.0f, 0.0f)).mul(0.2f)), new Vector3f(selectedFloatCord)));//settings.debug = true;
-            }*/
 
             try {
                 Thread.sleep(5L);

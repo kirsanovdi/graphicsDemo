@@ -89,8 +89,13 @@ public class Controller {
         if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS) display.increaseAmbLight();
         if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS) display.decreaseAmbLight();
 
+        keyHandler(window, ADD, GLFW_KEY_T);
+        keyHandler(window, REMOVE, GLFW_KEY_R);
+
         camera.mouseInput(window);
         model.handleInput(commandsSet);
+        if(commandsSet.contains(ADD)) engine.rayTrace(model.getOrientation(), model.getCameraPosition(), ADD);
+        if(commandsSet.contains(REMOVE)) engine.rayTrace(model.getOrientation(), model.getCameraPosition(), REMOVE);
 
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) status = Mode.FINISHED;
     }

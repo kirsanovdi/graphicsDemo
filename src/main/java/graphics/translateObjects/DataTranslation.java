@@ -29,20 +29,8 @@ public class DataTranslation {
         cordsRaw = new float[20000000];
 
         vertexArrayObject = new VAO();
-        vertexArrayObject.bind();
         vertexBufferObject = new VBO(this);
         elementBufferObject = new EBO(this);
-
-        vertexBufferObject.bindRefresh();
-        elementBufferObject.bindRefresh();
-
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 32, 0);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 32, 12);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 2, 32, 20);
-
-        vertexArrayObject.unbind();
-        vertexBufferObject.unbind();
-        elementBufferObject.unbind();
     }
 
     public void update() {
@@ -60,9 +48,10 @@ public class DataTranslation {
         vertexBufferObject.bindRefresh();
         elementBufferObject.bindRefresh();
 
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 32, 0);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 32, 12);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 2, 32, 20);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 44, 0);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 44, 12);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 2, 44, 20);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 3, 44, 32);
 
         vertexArrayObject.unbind();
         vertexBufferObject.unbind();
@@ -117,13 +106,12 @@ public class DataTranslation {
     /**
      * Преобразование и передача данных четырёхугольника(квадрата) в массивы индексов и значений вершин
      *
-     * @param a  первая координата квадрата
-     * @param b  вторая координата квадрата
-     * @param c  третья координата квадрата
-     * @param d  четвёртая координата квадрата
+     * @param a  первая координата треугольника
+     * @param b  вторая координата треугольника
+     * @param c  третья координата треугольника
      * @param id id стороны
      */
-    public void transferSquare(Vector3f a, Vector3f b, Vector3f c, Vector3f d, long id) {
+    public void transferTriangle(Vector3f a, Vector3f b, Vector3f c, long id, boolean upper) {
         final float yId = (float) (id / 16L) / 16.0f;
         final float xId = (float) (id % 16L) / 16.0f;
         final float delta = 1.0f / 16.0f;
@@ -132,18 +120,34 @@ public class DataTranslation {
         final float kY = (c.x - a.x) * (b.z - a.z) - (b.x - a.x) * (c.z - a.z);
         final float kZ = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
 
-        final float[] tempCordsRaw = new float[]{
-                a.x, a.y, a.z, xId, yId, kX, kY, kZ,
-                b.x, b.y, b.z, xId, yId + delta, kX, kY, kZ,
-                c.x, c.y, c.z, xId + delta, yId + delta, kX, kY, kZ,
-                d.x, d.y, d.z, xId + delta, yId, kX, kY, kZ
+        final float distA = b.distance(c), distB = a.distance(c), distC = b.distance(a);
+        final float sqrA = distA * distA, sqrB = distB * distB, sqrC = distC * distC;
+        final float kA = sqrA * (sqrB + sqrC - sqrA), kB = sqrB * (sqrA + sqrC - sqrB), kC = sqrC * (sqrA + sqrB - sqrC);
+
+        final Vector3f center = new Vector3f(a).mul(kA).add(new Vector3f(b).mul(kB)).add(new Vector3f(c).mul(kC)).div(kA + kB + kC);
+        final float cX = center.x, cY = center.y, cZ = center.z;
+
+        final float[] tempCordsRaw = upper ? new float[]{
+                a.x, a.y, a.z, xId, yId,                 kX, kY, kZ, cX, cY, cZ,
+                b.x, b.y, b.z, xId, yId + delta,         kX, kY, kZ, cX, cY, cZ,
+                c.x, c.y, c.z, xId + delta, yId + delta, kX, kY, kZ, cX, cY, cZ,
+        } : new float[]{
+                a.x, a.y, a.z, xId + delta, yId + delta, kX, kY, kZ, cX, cY, cZ,
+                b.x, b.y, b.z, xId + delta, yId,         kX, kY, kZ, cX, cY, cZ,
+                c.x, c.y, c.z, xId, yId,                 kX, kY, kZ, cX, cY, cZ,
         };
         final int[] tempIndicesRaw = new int[]{
                 verticesCount, verticesCount + 2, verticesCount + 1,
-                verticesCount, verticesCount + 3, verticesCount + 2
         };
-        verticesCount += 4;
+        verticesCount += 3;
         transfer(tempCordsRaw, tempIndicesRaw);
+    }
+    //1 3 2 a, b, c
+    //1 4 3 a, d, b
+
+    public void transferSquare(Vector3f a, Vector3f b, Vector3f c, Vector3f d, long id) {
+        transferTriangle(a, b, c, id, true);
+        transferTriangle(c, d, a, id, false);
     }
 
     /**

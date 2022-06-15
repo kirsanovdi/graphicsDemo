@@ -38,8 +38,6 @@ public class Display {
     private final String name;
     private long window;
     private double frames, lastTime;
-    private String vertexShaderSource;
-    private String fragmentShaderSource;
     private float ambLight;
 
     private void printRenderTime() {
@@ -89,13 +87,6 @@ public class Display {
     }
 
     private void init() {
-
-        try {
-            vertexShaderSource = Files.readString(new File("src/main/resources/code/vertexShader").toPath());
-            fragmentShaderSource = Files.readString(new File("src/main/resources/code/fragmentShader").toPath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         // Set up an error callback. The default implementation
         // will print the error message in System.err.
@@ -183,8 +174,11 @@ public class Display {
         glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-        Shader shader = new Shader(vertexShaderSource, fragmentShaderSource);
+        Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader");
+        Shader outline = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader");
 
         Texture textureMap = new Texture("src/main/resources/img/texturePack.png", 0, 4096, 4096);
         textureMap.texUnit(shader, "tex0");
@@ -201,7 +195,7 @@ public class Display {
 
 
             glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
 
             shader.activate();
 
@@ -219,7 +213,26 @@ public class Display {
             reflectMap.bind();
             dataTranslation.setupVAO();
 
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
             glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(), GL_UNSIGNED_INT, 0);
+
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilMask(0x00);
+            glDisable(GL_DEPTH_TEST);
+
+            outline.activate();
+            dataTranslation.setupVAO();
+
+            camera.Matrix(45.0f, 0.1f, 10000.0f, outline, "camMatrix");
+            glUniform3fv(glGetUniformLocation(outline.getId(), "camPos"), new float[]{camera.position.x, camera.position.y, camera.position.z});
+            glUniform1f(glGetUniformLocation(outline.getId(), "outlining"), 0.05f);
+
+            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(), GL_UNSIGNED_INT, 0);
+
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glEnable(GL_DEPTH_TEST);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
