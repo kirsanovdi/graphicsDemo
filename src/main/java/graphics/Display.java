@@ -147,8 +147,8 @@ public class Display {
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-        Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader");
-        Shader outlineShader = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader");
+        Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader", "src/main/resources/code/geometryShader");
+        Shader outlineShader = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader", "src/main/resources/code/outlineGeometryShader");
         Shader frameShader = new Shader("src/main/resources/code/frameVertexShader", "src/main/resources/code/frameFragmentShader");
 
         Texture textureMap = new Texture("src/main/resources/img/texturePack.png", 0, 4096, 4096);

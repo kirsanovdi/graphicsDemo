@@ -3,16 +3,19 @@
     layout (location = 1) in vec2 aTex;
     layout (location = 2) in vec3 aNormal;
 
-    out vec2 texCoord;
-    out vec3 Normal;
-    out vec3 crntPos;
+    out DATA
+    {
+        vec3 crntPos;
+        vec2 texCoord;
+        mat4 projection;
+    } data_out;
 
     uniform mat4 camMatrix;
 
     void main()
     {
-        crntPos = aPos;
-        gl_Position = camMatrix * vec4(aPos, 1.0f);
-        texCoord = aTex;
-        Normal = aNormal;
+        data_out.texCoord = aTex;
+        data_out.crntPos = aPos;
+        data_out.projection = camMatrix;
+        gl_Position = vec4(aPos, 1.0f);
     }

@@ -4,7 +4,9 @@ import engine.entities.LightPoint;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.IntBuffer;
 import java.nio.file.Files;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.lwjgl.opengl.GL46.*;
@@ -39,9 +41,13 @@ public class Shader {
         glShaderSource(vertexShader, vertexCode);
         glCompileShader(vertexShader);
 
+        checkCompile(id, "VERTEX");
+
         int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShader, fragmentCode);
         glCompileShader(fragmentShader);
+
+        checkCompile(id, "FRAGMENT");
 
         id = glCreateProgram();
         //System.out.println(id);
@@ -49,8 +55,53 @@ public class Shader {
         glAttachShader(id, fragmentShader);
         glLinkProgram(id);
 
+        checkCompile(id, "PROGRAM");
+
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
+    }
+
+    Shader(String vertexSource, String fragmentSource, String geometrySource) {
+
+        String vertexCode = "", fragmentCode = "", geometryCode = "";
+        try {
+            vertexCode = Files.readString(new File(vertexSource).toPath());
+            fragmentCode = Files.readString(new File(fragmentSource).toPath());
+            geometryCode = Files.readString(new File(geometrySource).toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, vertexCode);
+        glCompileShader(vertexShader);
+
+        checkCompile(id, "VERTEX");
+
+        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, fragmentCode);
+        glCompileShader(fragmentShader);
+
+        checkCompile(id, "FRAGMENT");
+
+        int geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometryShader, geometryCode);
+        glCompileShader(geometryShader);
+
+        checkCompile(id, "GEOMETRY");
+
+        id = glCreateProgram();
+        //System.out.println(id);
+        glAttachShader(id, vertexShader);
+        glAttachShader(id, fragmentShader);
+        glAttachShader(id, geometryShader);
+        glLinkProgram(id);
+
+        checkCompile(id, "PROGRAM");
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteShader(geometryShader);
     }
 
     protected void transferCamera(Camera camera){
@@ -87,6 +138,15 @@ public class Shader {
     protected void translateAmbientLight(float ambLight) {
         int ambLightPos = glGetUniformLocation(getId(), "ambient");
         glUniform1f(ambLightPos, ambLight);
+    }
+
+    protected void checkCompile(int shaderID, String type){
+        IntBuffer buffer = IntBuffer.allocate(10);
+        glGetShaderiv(getId(), GL_COMPILE_STATUS, buffer);
+        System.out.println(type + (Objects.equals(type, "PROGRAM") ?" " + getId():""));
+        for(int i = 0; i < 10; i++) System.out.print(buffer.get(i) + " ");
+        System.out.println();
+        System.out.println(glGetShaderInfoLog(shaderID));
     }
 
     /**

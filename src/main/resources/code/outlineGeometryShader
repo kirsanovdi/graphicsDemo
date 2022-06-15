@@ -1,0 +1,38 @@
+#version 330 core
+
+    layout (triangles) in;
+    layout (triangle_strip, max_vertices = 3) out;
+
+    in DATA
+    {
+        mat4 projection;
+        vec3 center;
+        float outlining;
+    } data_in[];
+
+    void main(){
+        vec3 vector01 = normalize(vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position));
+        vec3 vector21 = normalize(vec3(gl_in[2].gl_Position) - vec3(gl_in[1].gl_Position));
+        vec3 surfaceNormal = normalize(cross(vector01, vector21));
+
+        for(int i = 0; i < 3; i++){
+            vec3 pos = vec3(gl_in[i].gl_Position);
+            vec3 shift = (pos - data_in[i].center) * data_in[i].outlining;
+            vec3 crntPos = pos - surfaceNormal * data_in[i].outlining/2 + shift;
+
+            gl_Position = data_in[i].projection * vec4(crntPos, 1.0f);
+            EmitVertex();
+        }
+
+        //gl_Position = data_in[0].projection * (gl_in[0].gl_Position + vec4(-surfaceNormal, 0.0f));
+        //EmitVertex();
+
+        //gl_Position = data_in[1].projection * gl_in[1].gl_Position;
+        //EmitVertex();
+
+        //gl_Position = data_in[2].projection * gl_in[2].gl_Position;
+        //EmitVertex();
+
+
+        EndPrimitive();
+    }
