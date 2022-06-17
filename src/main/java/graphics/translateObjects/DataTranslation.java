@@ -1,6 +1,5 @@
 package graphics.translateObjects;
 
-
 import engine.Engine;
 import engine.entities.Block;
 import engine.entities.Line;
@@ -48,10 +47,8 @@ public class DataTranslation {
         vertexBufferObject.bindRefresh();
         elementBufferObject.bindRefresh(renderingType);
 
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 44, 0);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 44, 12);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 2, 44, 20);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 3, 44, 32);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 20, 0);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 20, 12);
 
         vertexArrayObject.unbind();
         vertexBufferObject.unbind();
@@ -136,25 +133,14 @@ public class DataTranslation {
         final float xId = (float) (id % 16L) / 16.0f;
         final float delta = 1.0f / 16.0f;
 
-        final float kX = (b.y - a.y) * (c.z - a.z) - (c.y - a.y) * (b.z - a.z);
-        final float kY = (c.x - a.x) * (b.z - a.z) - (b.x - a.x) * (c.z - a.z);
-        final float kZ = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-
-        final float distA = b.distance(c), distB = a.distance(c), distC = b.distance(a);
-        final float sqrA = distA * distA, sqrB = distB * distB, sqrC = distC * distC;
-        final float kA = sqrA * (sqrB + sqrC - sqrA), kB = sqrB * (sqrA + sqrC - sqrB), kC = sqrC * (sqrA + sqrB - sqrC);
-
-        final Vector3f center = new Vector3f(a).mul(kA).add(new Vector3f(b).mul(kB)).add(new Vector3f(c).mul(kC)).div(kA + kB + kC);
-        final float cX = center.x, cY = center.y, cZ = center.z;
-
         final float[] tempCordsRaw = upper ? new float[]{
-                a.x, a.y, a.z, xId, yId,                 kX, kY, kZ, cX, cY, cZ,
-                b.x, b.y, b.z, xId, yId + delta,         kX, kY, kZ, cX, cY, cZ,
-                c.x, c.y, c.z, xId + delta, yId + delta, kX, kY, kZ, cX, cY, cZ,
+                a.x, a.y, a.z, xId, yId,
+                b.x, b.y, b.z, xId, yId + delta,
+                c.x, c.y, c.z, xId + delta, yId + delta,
         } : new float[]{
-                a.x, a.y, a.z, xId + delta, yId + delta, kX, kY, kZ, cX, cY, cZ,
-                b.x, b.y, b.z, xId + delta, yId,         kX, kY, kZ, cX, cY, cZ,
-                c.x, c.y, c.z, xId, yId,                 kX, kY, kZ, cX, cY, cZ,
+                a.x, a.y, a.z, xId + delta, yId + delta,
+                b.x, b.y, b.z, xId + delta, yId,
+                c.x, c.y, c.z, xId, yId,
         };
         final int[] tempIndicesTextureRaw = new int[]{
                 verticesCount, verticesCount + 2, verticesCount + 1,

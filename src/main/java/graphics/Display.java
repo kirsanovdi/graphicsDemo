@@ -200,7 +200,7 @@ public class Display {
                 shader.activate();
                 shader.transferCamera(camera);
                 shader.translateLightPoints(engine.lightPoints);
-                shader.translate1f("ambient", ambLight);
+                shader.translate1f("ambient", 0.4f);
                 dataTranslation.setupVAO();
 
                 glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
