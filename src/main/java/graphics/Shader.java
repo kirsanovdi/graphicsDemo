@@ -50,7 +50,6 @@ public class Shader {
         checkCompile(id, "FRAGMENT");
 
         id = glCreateProgram();
-        //System.out.println(id);
         glAttachShader(id, vertexShader);
         glAttachShader(id, fragmentShader);
         glLinkProgram(id);
@@ -104,7 +103,7 @@ public class Shader {
         glDeleteShader(geometryShader);
     }
 
-    protected void transferCamera(Camera camera){
+    protected void transferCamera(Camera camera) {
         camera.Matrix(45.0f, 0.1f, 10000.0f, this, "camMatrix");
 
         int camPos = glGetUniformLocation(getId(), "camPos");
@@ -139,11 +138,11 @@ public class Shader {
         glUniform1f(glGetUniformLocation(getId(), name), value);
     }
 
-    protected void checkCompile(int shaderID, String type){
+    protected void checkCompile(int shaderID, String type) {
         IntBuffer buffer = IntBuffer.allocate(10);
         glGetShaderiv(getId(), GL_COMPILE_STATUS, buffer);
-        System.out.println(type + (Objects.equals(type, "PROGRAM") ?" " + getId():""));
-        for(int i = 0; i < 10; i++) System.out.print(buffer.get(i) + " ");
+        System.out.println(type + (Objects.equals(type, "PROGRAM") ? " " + getId() : ""));
+        for (int i = 0; i < 10; i++) System.out.print(buffer.get(i) + " ");
         System.out.println();
         System.out.println(glGetShaderInfoLog(shaderID));
     }

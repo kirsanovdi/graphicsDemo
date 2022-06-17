@@ -118,11 +118,11 @@ public class Engine {
             lastCheckedPos = posI;
         }
         int sideId = 1;
-        if(command == Commands.ADD && lastCord != null) {
+        if (command == Commands.ADD && lastCord != null) {
             blocks.put(lastCord, new Block(lastCord, 0, new int[]{sideId, sideId, sideId, sideId, sideId, sideId}));
             updateBlockSpace(lastCord);
         }
-        if(command == Commands.REMOVE && selectedCord != null) {
+        if (command == Commands.REMOVE && selectedCord != null) {
             blocks.remove(selectedCord);
             updateBlockSpace(selectedCord);
         }

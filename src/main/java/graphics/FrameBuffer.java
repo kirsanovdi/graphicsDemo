@@ -20,7 +20,7 @@ public class FrameBuffer {
     private final int rectVAO, rectVBO;
     private final Shader shader;
 
-    public FrameBuffer(Shader shader, int slot, int width, int height, float[] rectangleVertices){
+    public FrameBuffer(Shader shader, int slot, int width, int height, float[] rectangleVertices) {
         this.slot = slot;
         this.shader = shader;
 
@@ -58,15 +58,15 @@ public class FrameBuffer {
         glUniform1i(glGetUniformLocation(shader.getId(), "screenTexture"), slot);
     }
 
-    public void hookOutput(){
+    public void hookOutput() {
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     }
 
-    public void releaseOutput(){
+    public void releaseOutput() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    public void render(){
+    public void render() {
         shader.activate();
         glBindVertexArray(rectVAO);
         glDisable(GL_DEPTH_TEST);
@@ -76,7 +76,7 @@ public class FrameBuffer {
         glEnable(GL_DEPTH_TEST);
     }
 
-    public void renderSubWindow(Runnable runnable){
+    public void renderSubWindow(Runnable runnable) {
         hookOutput();
         runnable.run();
         releaseOutput();

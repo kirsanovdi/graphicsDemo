@@ -4,19 +4,14 @@ import controller.Controller;
 import controller.Mode;
 import engine.Engine;
 import graphics.translateObjects.DataTranslation;
-import org.joml.Vector3f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.IntBuffer;
-import java.nio.file.Files;
 import java.util.Objects;
-import java.util.Set;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -24,9 +19,6 @@ import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
 import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
-
-import engine.entities.LightPoint;
-
 
 public class Display {
     public final int width;

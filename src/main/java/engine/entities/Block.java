@@ -9,7 +9,7 @@ import java.util.Arrays;
 /**
  * Блок, основной элемент при создании сцены
  */
-public class Block implements Entity{
+public class Block implements Entity {
 
     public Vector3i cord;
     public final int id;

@@ -1,10 +1,8 @@
 package engine.entities;
 
 import controller.Commands;
-import engine.Engine;
 import graphics.Camera;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
 
 import java.util.Set;
 
