@@ -3,38 +3,42 @@
     layout (triangles) in;
     layout (triangle_strip, max_vertices = 3) out;
 
+    uniform mat4 camMatrix;
+
     out vec3 Normal;
     out vec3 crntPos;
     out vec2 texCoord;
 
     in DATA
     {
-        vec3 crntPos;
         vec2 texCoord;
-        mat4 projection;
     } data_in[];
 
     void main(){
-        vec3 vector01 = normalize(data_in[0].crntPos - data_in[1].crntPos);
-        vec3 vector21 = normalize(data_in[2].crntPos - data_in[1].crntPos);
+        vec3 a = vec3(gl_in[0].gl_Position);
+        vec3 b = vec3(gl_in[1].gl_Position);
+        vec3 c = vec3(gl_in[2].gl_Position);
+
+        vec3 vector01 = normalize(a - b);
+        vec3 vector21 = normalize(c - b);
         vec3 surfaceNormal = normalize(cross(vector01, vector21));
 
-        gl_Position = data_in[0].projection * gl_in[0].gl_Position;
+        gl_Position = camMatrix * gl_in[0].gl_Position;
         texCoord = data_in[0].texCoord;
         Normal = surfaceNormal;
-        crntPos = data_in[0].crntPos;
+        crntPos = a;
         EmitVertex();
 
-        gl_Position = data_in[1].projection * gl_in[1].gl_Position;
+        gl_Position = camMatrix * gl_in[1].gl_Position;
         texCoord = data_in[1].texCoord;
         Normal = surfaceNormal;
-        crntPos = data_in[1].crntPos;
+        crntPos = b;
         EmitVertex();
 
-        gl_Position = data_in[2].projection * gl_in[2].gl_Position;
+        gl_Position = camMatrix * gl_in[2].gl_Position;
         texCoord = data_in[2].texCoord;
         Normal = surfaceNormal;
-        crntPos = data_in[2].crntPos;
+        crntPos = c;
         EmitVertex();
 
         EndPrimitive();

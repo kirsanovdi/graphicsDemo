@@ -3,36 +3,32 @@
     layout (triangles) in;
     layout (triangle_strip, max_vertices = 3) out;
 
-    in DATA
-    {
-        mat4 projection;
-        vec3 center;
-        float outlining;
-    } data_in[];
+    uniform mat4 camMatrix;
+    uniform float outlining;
 
     void main(){
-        vec3 vector01 = normalize(vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position));
-        vec3 vector21 = normalize(vec3(gl_in[2].gl_Position) - vec3(gl_in[1].gl_Position));
+        vec3 a = vec3(gl_in[0].gl_Position);
+        vec3 b = vec3(gl_in[1].gl_Position);
+        vec3 c = vec3(gl_in[2].gl_Position);
+
+        vec3 vector01 = normalize(a - b);
+        vec3 vector21 = normalize(c - b);
         vec3 surfaceNormal = normalize(cross(vector01, vector21));
+
+        float distA = distance(b, c), distB = distance(a, c), distC = distance(b, a);
+        float sqrA = distA * distA, sqrB = distB * distB, sqrC = distC * distC;
+        float kA = sqrA * (sqrB + sqrC - sqrA), kB = sqrB * (sqrA + sqrC - sqrB), kC = sqrC * (sqrA + sqrB - sqrC);
+
+        vec3 center = (a * kA + b * kB + c * kC)/(kA + kB + kC);
 
         for(int i = 0; i < 3; i++){
             vec3 pos = vec3(gl_in[i].gl_Position);
-            vec3 shift = (pos - data_in[i].center) * data_in[i].outlining;
-            vec3 crntPos = pos - surfaceNormal * data_in[i].outlining/2 + shift;
+            vec3 shift = (pos - center) * outlining;
+            vec3 crntPos = pos - surfaceNormal * outlining/2.0f + shift;
 
-            gl_Position = data_in[i].projection * vec4(crntPos, 1.0f);
+            gl_Position = camMatrix * vec4(crntPos, 1.0f);
             EmitVertex();
         }
-
-        //gl_Position = data_in[0].projection * (gl_in[0].gl_Position + vec4(-surfaceNormal, 0.0f));
-        //EmitVertex();
-
-        //gl_Position = data_in[1].projection * gl_in[1].gl_Position;
-        //EmitVertex();
-
-        //gl_Position = data_in[2].projection * gl_in[2].gl_Position;
-        //EmitVertex();
-
 
         EndPrimitive();
     }
