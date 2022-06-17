@@ -20,7 +20,7 @@ public class FrameBuffer {
     private final int rectVAO, rectVBO;
     private final Shader shader;
 
-    public FrameBuffer(Shader shader, int slot, int width, int height){
+    public FrameBuffer(Shader shader, int slot, int width, int height, float[] rectangleVertices){
         this.slot = slot;
         this.shader = shader;
 
@@ -43,16 +43,6 @@ public class FrameBuffer {
         glBindRenderbuffer(GL_RENDERBUFFER, RBO);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-        final float[] rectangleVertices = new float[]{
-                -1.0f,  1.0f,  0.0f,  1.0f,
-                -1.0f, -1.0f,  0.0f,  0.0f,
-                1.0f, -1.0f,  1.0f,  0.0f,
-
-                -1.0f,  1.0f,  0.0f,  1.0f,
-                1.0f, -1.0f,  1.0f,  0.0f,
-                1.0f,  1.0f,  1.0f,  1.0f,
-        };
 
         rectVAO = glGenVertexArrays();
         rectVBO = glGenBuffers();
@@ -84,5 +74,12 @@ public class FrameBuffer {
         glBindTexture(GL_TEXTURE_2D, framebufferTexture);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glEnable(GL_DEPTH_TEST);
+    }
+
+    public void renderSubWindow(Runnable runnable){
+        hookOutput();
+        runnable.run();
+        releaseOutput();
+        render();
     }
 }

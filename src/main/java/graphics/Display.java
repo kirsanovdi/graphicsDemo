@@ -4,6 +4,7 @@ import controller.Controller;
 import controller.Mode;
 import engine.Engine;
 import graphics.translateObjects.DataTranslation;
+import org.joml.Vector3f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -32,6 +33,7 @@ public class Display {
     public final int height;
 
     public final Camera camera;
+    //public final Camera camera2;
     public final Engine engine;
     public final Controller controller;
 
@@ -67,6 +69,7 @@ public class Display {
         this.width = width;
         this.name = name;
         this.camera = camera;
+        //this.camera2 = new Camera(width,height, new Vector3f(0.0f, 2.0f, 25.0f));
         this.engine = engine;
         this.controller = controller;
     }
@@ -136,6 +139,18 @@ public class Display {
         glfwShowWindow(window);
     }
 
+    float[] getSubWindowVertices(float centerX, float centerY, float rangeX, float rangeY) {
+        return new float[]{
+                centerX - rangeX, centerY + rangeY, 0.0f, 1.0f,
+                centerX - rangeX, centerY - rangeY, 0.0f, 0.0f,
+                centerX + rangeX, centerY - rangeY, 1.0f, 0.0f,
+
+                centerX - rangeX, centerY + rangeY, 0.0f, 1.0f,
+                centerX + rangeX, centerY - rangeY, 1.0f, 0.0f,
+                centerX + rangeX, centerY + rangeY, 1.0f, 1.0f,
+        };
+    }
+
     /**
      * Метод, содержащий цикл отрисовки окна
      */
@@ -147,65 +162,97 @@ public class Display {
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-        Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader", "src/main/resources/code/geometryShader");
-        Shader outlineShader = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader", "src/main/resources/code/outlineGeometryShader");
-        Shader frameShader = new Shader("src/main/resources/code/frameVertexShader", "src/main/resources/code/frameFragmentShader");
+        final Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader", "src/main/resources/code/geometryShader");
+        final Shader outlineShader = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader", "src/main/resources/code/outlineGeometryShader");
+        final Shader frameShader = new Shader("src/main/resources/code/frameVertexShader", "src/main/resources/code/frameFragmentShader");
 
-        Texture textureMap = new Texture("src/main/resources/img/texturePack.png", 0, 4096, 4096);
+        final Texture textureMap = new Texture("src/main/resources/img/texturePack.png", 0, 4096, 4096);
         textureMap.texUnit(shader, "tex0");
 
-        Texture reflectMap = new Texture("src/main/resources/img/texturePackSpecularMap.png", 1, 4096, 4096);
+        final Texture reflectMap = new Texture("src/main/resources/img/texturePackSpecularMap.png", 1, 4096, 4096);
         reflectMap.texUnit(shader, "tex1");
 
-        DataTranslation dataTranslation = new DataTranslation(engine);
+        final DataTranslation dataTranslation = new DataTranslation(engine);
 
-        FrameBuffer frameBuffer = new FrameBuffer(frameShader, 2, width, height);
+        final FrameBuffer mainFrame = new FrameBuffer(frameShader, 2, width, height, getSubWindowVertices(0f, 0f, 1f, 1f));
+        final FrameBuffer secondaryFrameUR = new FrameBuffer(frameShader, 2, width, height, getSubWindowVertices(0.75f, 0.75f, 0.25f, 0.25f));
+        final FrameBuffer secondaryFrameUL = new FrameBuffer(frameShader, 2, width, height, getSubWindowVertices(-0.75f, 0.75f, 0.25f, 0.25f));
+
 
         while (!glfwWindowShouldClose(window) && controller.status == Mode.RUNNING) {
             controller.handleInput(window);
 
-            frameBuffer.hookOutput();
+            mainFrame.renderSubWindow(() -> {
+                glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
+                textureMap.bind();
+                reflectMap.bind();
 
-            glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
-            textureMap.bind();
-            reflectMap.bind();
+                dataTranslation.update(RenderingType.Texture);
+                shader.activate();
+                shader.transferCamera(camera);
+                shader.translateLightPoints(engine.lightPoints);
+                shader.translate1f("ambient", ambLight);
+                dataTranslation.setupVAO();
 
-            dataTranslation.update(RenderingType.Texture);
-            shader.activate();
-            shader.transferCamera(camera);
-            shader.translateLightPoints(engine.lightPoints);
-            shader.translateAmbientLight(ambLight);
-            dataTranslation.setupVAO();
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+            });
 
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilMask(0xFF);
+            secondaryFrameUR.renderSubWindow(() -> {
+                glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
+                textureMap.bind();
+                reflectMap.bind();
 
-            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+                dataTranslation.update(RenderingType.Texture);
+                shader.activate();
+                shader.transferCamera(camera);
+                shader.translateLightPoints(engine.lightPoints);
+                shader.translate1f("ambient", ambLight);
+                dataTranslation.setupVAO();
 
-            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-            glStencilMask(0x00);
-            glDisable(GL_DEPTH_TEST);
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+            });
+
+            secondaryFrameUL.renderSubWindow(() -> {
+                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
+                textureMap.bind();
+                reflectMap.bind();
+
+                dataTranslation.update(RenderingType.Texture);
+                shader.activate();
+                shader.transferCamera(camera);
+                shader.translateLightPoints(engine.lightPoints);
+                shader.translate1f("ambient", ambLight);
+                dataTranslation.setupVAO();
+
+                glStencilFunc(GL_ALWAYS, 1, 0xFF);
+                glStencilMask(0xFF);
+
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+
+                glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+                glStencilMask(0x00);
 
 
-            dataTranslation.update(RenderingType.Outline);
-            outlineShader.activate();
-            outlineShader.transferCamera(camera);
-            glUniform1f(glGetUniformLocation(outlineShader.getId(), "outlining"), 0.05f);
-            dataTranslation.setupVAO();
+                glDisable(GL_DEPTH_TEST);
+                dataTranslation.update(RenderingType.Outline);
+                outlineShader.activate();
+                outlineShader.transferCamera(camera);
+                outlineShader.translate1f("outlining", 0.05f);
+                dataTranslation.setupVAO();
 
-            glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Outline), GL_UNSIGNED_INT, 0);
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Outline), GL_UNSIGNED_INT, 0);
 
-            glStencilMask(0xFF);
-            glStencilFunc(GL_ALWAYS, 0, 0xFF);
-            glEnable(GL_DEPTH_TEST);
-
-            frameBuffer.releaseOutput();
-            frameBuffer.render();
+                glEnable(GL_DEPTH_TEST);
+                glStencilMask(0xFF);
+                glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            });
 
             glfwSwapBuffers(window);
             glfwPollEvents();
-            //printRenderTime();
+            printRenderTime();
         }
 
         dataTranslation.destroy();

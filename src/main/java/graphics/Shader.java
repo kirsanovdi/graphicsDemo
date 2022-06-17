@@ -135,9 +135,8 @@ public class Shader {
         glUniform3fv(lightPos, cords);
     }
 
-    protected void translateAmbientLight(float ambLight) {
-        int ambLightPos = glGetUniformLocation(getId(), "ambient");
-        glUniform1f(ambLightPos, ambLight);
+    protected void translate1f(String name, float value) {
+        glUniform1f(glGetUniformLocation(getId(), name), value);
     }
 
     protected void checkCompile(int shaderID, String type){
