@@ -23,12 +23,12 @@ public class Camera {
     private boolean cursorHookHandler = true;
 
 
-    public Camera(int width, int height, Vector3f position) {
+    public Camera(int width, int height, Vector3f position, Vector3f orientation) {
         up = new Vector3f(0.0f, 1.0f, 0.0f);
         firstClick = false;
         this.height = height;
         this.width = width;
-        this.orientation = new Vector3f(0.0f, 0.0f, -1.0f);
+        this.orientation = orientation;
         this.position = position;
     }
 

@@ -31,8 +31,8 @@ public class Shader {
 
         String vertexCode = "", fragmentCode = "";
         try {
-            vertexCode = Files.readString(new File(vertexSource).toPath());
-            fragmentCode = Files.readString(new File(fragmentSource).toPath());
+            vertexCode = Files.readString(new File("src/main/resources/code/" + vertexSource).toPath());
+            fragmentCode = Files.readString(new File("src/main/resources/code/" + fragmentSource).toPath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -64,9 +64,9 @@ public class Shader {
 
         String vertexCode = "", fragmentCode = "", geometryCode = "";
         try {
-            vertexCode = Files.readString(new File(vertexSource).toPath());
-            fragmentCode = Files.readString(new File(fragmentSource).toPath());
-            geometryCode = Files.readString(new File(geometrySource).toPath());
+            vertexCode = Files.readString(new File("src/main/resources/code/" + vertexSource).toPath());
+            fragmentCode = Files.readString(new File("src/main/resources/code/" + fragmentSource).toPath());
+            geometryCode = Files.readString(new File("src/main/resources/code/" + geometrySource).toPath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -104,7 +104,7 @@ public class Shader {
     }
 
     protected void transferCamera(Camera camera) {
-        camera.Matrix(45.0f, 0.1f, 10000.0f, this, "camMatrix");
+        camera.Matrix(90.0f, 0.1f, 10000.0f, this, "camMatrix");
 
         int camPos = glGetUniformLocation(getId(), "camPos");
         glUniform3fv(camPos, new float[]{camera.position.x, camera.position.y, camera.position.z});
@@ -140,7 +140,7 @@ public class Shader {
 
     protected void checkCompile(int shaderID, String type) {
         IntBuffer buffer = IntBuffer.allocate(10);
-        glGetShaderiv(getId(), GL_COMPILE_STATUS, buffer);
+        glGetShaderiv(getId(), GL_LINK_STATUS, buffer);
         System.out.println(type + (Objects.equals(type, "PROGRAM") ? " " + getId() : ""));
         for (int i = 0; i < 10; i++) System.out.print(buffer.get(i) + " ");
         System.out.println();

@@ -47,8 +47,9 @@ public class DataTranslation {
         vertexBufferObject.bindRefresh();
         elementBufferObject.bindRefresh(renderingType);
 
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 20, 0);
-        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 20, 12);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 0, 24, 0);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 1, 24, 12);
+        vertexArrayObject.LinkAttrib(vertexBufferObject, 2, 24, 20);
 
         vertexArrayObject.unbind();
         vertexBufferObject.unbind();
@@ -129,18 +130,19 @@ public class DataTranslation {
      * @param id id стороны
      */
     public void transferTriangle(Vector3f a, Vector3f b, Vector3f c, long id, boolean upper) {
-        final float yId = (float) (id / 16L) / 16.0f;
-        final float xId = (float) (id % 16L) / 16.0f;
-        final float delta = 1.0f / 16.0f;
+        final float yId = id == 10?0:(float) (id / 16L) / 16.0f;
+        final float xId = id == 10?0:(float) (id % 16L) / 16.0f;
+        final float delta = id == 10?1.0f:1.0f / 16.0f;
+        final float metaID = (float) id;
 
         final float[] tempCordsRaw = upper ? new float[]{
-                a.x, a.y, a.z, xId, yId,
-                b.x, b.y, b.z, xId, yId + delta,
-                c.x, c.y, c.z, xId + delta, yId + delta,
+                a.x, a.y, a.z, xId, yId, metaID,
+                b.x, b.y, b.z, xId, yId + delta, metaID,
+                c.x, c.y, c.z, xId + delta, yId + delta, metaID,
         } : new float[]{
-                a.x, a.y, a.z, xId + delta, yId + delta,
-                b.x, b.y, b.z, xId + delta, yId,
-                c.x, c.y, c.z, xId, yId,
+                a.x, a.y, a.z, xId + delta, yId + delta, metaID,
+                b.x, b.y, b.z, xId + delta, yId, metaID,
+                c.x, c.y, c.z, xId, yId, metaID,
         };
         final int[] tempIndicesTextureRaw = new int[]{
                 verticesCount, verticesCount + 2, verticesCount + 1,

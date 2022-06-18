@@ -8,10 +8,12 @@
     out vec3 Normal;
     out vec3 crntPos;
     out vec2 texCoord;
+    out float dataID;
 
     in DATA
     {
         vec2 texCoord;
+        float dataID;
     } data_in[];
 
     void main(){
@@ -26,18 +28,21 @@
         gl_Position = camMatrix * gl_in[0].gl_Position;
         texCoord = data_in[0].texCoord;
         Normal = surfaceNormal;
+        dataID = data_in[0].dataID;
         crntPos = a;
         EmitVertex();
 
         gl_Position = camMatrix * gl_in[1].gl_Position;
         texCoord = data_in[1].texCoord;
         Normal = surfaceNormal;
+        dataID = data_in[1].dataID;
         crntPos = b;
         EmitVertex();
 
         gl_Position = camMatrix * gl_in[2].gl_Position;
         texCoord = data_in[2].texCoord;
         Normal = surfaceNormal;
+        dataID = data_in[2].dataID;
         crntPos = c;
         EmitVertex();
 

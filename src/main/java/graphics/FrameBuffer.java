@@ -76,10 +76,23 @@ public class FrameBuffer {
         glEnable(GL_DEPTH_TEST);
     }
 
+    public void enableFrameTexture(){
+        shader.activate();
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+    }
+
     public void renderSubWindow(Runnable runnable) {
         hookOutput();
         runnable.run();
         releaseOutput();
         render();
+    }
+
+    public void renderSubFrame(Runnable runnable){
+        hookOutput();
+        runnable.run();
+        releaseOutput();
+        enableFrameTexture();
     }
 }

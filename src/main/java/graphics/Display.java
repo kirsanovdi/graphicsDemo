@@ -4,6 +4,7 @@ import controller.Controller;
 import controller.Mode;
 import engine.Engine;
 import graphics.translateObjects.DataTranslation;
+import org.joml.Vector3f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -131,7 +132,7 @@ public class Display {
         glfwShowWindow(window);
     }
 
-    float[] getSubWindowVertices(float centerX, float centerY, float rangeX, float rangeY) {
+    public static float[] getSubWindowVertices(float centerX, float centerY, float rangeX, float rangeY) {
         return new float[]{
                 centerX - rangeX, centerY + rangeY, 0.0f, 1.0f,
                 centerX - rangeX, centerY - rangeY, 0.0f, 0.0f,
@@ -154,25 +155,89 @@ public class Display {
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-        final Shader shader = new Shader("src/main/resources/code/vertexShader", "src/main/resources/code/fragmentShader", "src/main/resources/code/geometryShader");
-        final Shader outlineShader = new Shader("src/main/resources/code/outlineVertexShader", "src/main/resources/code/outlineFragmentShader", "src/main/resources/code/outlineGeometryShader");
-        final Shader frameShader = new Shader("src/main/resources/code/frameVertexShader", "src/main/resources/code/frameFragmentShader");
+        final Shader shader = new Shader("vertexShader", "fragmentShader", "geometryShader");
+        final Shader mirrorShader = new Shader("vertexShader", "mirrorFragmentShader", "geometryShader");
+        final Shader outlineShader = new Shader("outlineVertexShader", "outlineFragmentShader", "outlineGeometryShader");
+        final Shader frameShader = new Shader("frameVertexShader", "frameFragmentShader");
+        final Shader frameShader2 = new Shader("frameVertexShader", "frameFragmentShader");
+        final Shader frameShader3 = new Shader("frameVertexShader", "frameFragmentShader");
+        final Shader frameShader4 = new Shader("frameVertexShader", "frameFragmentShader");
+        final Shader testFrameShader = new Shader("frameVertexShader", "testFrameFragmentShader");
 
-        final Texture textureMap = new Texture("src/main/resources/img/texturePack.png", 0, 4096, 4096);
+        final Texture textureMap = new Texture("texturePack.png", 0, 4096, 4096);
         textureMap.texUnit(shader, "tex0");
+        textureMap.texUnit(mirrorShader, "tex0");
 
-        final Texture reflectMap = new Texture("src/main/resources/img/texturePackSpecularMap.png", 1, 4096, 4096);
+        final Texture reflectMap = new Texture("texturePackSpecularMap.png", 1, 4096, 4096);
         reflectMap.texUnit(shader, "tex1");
+        reflectMap.texUnit(mirrorShader, "tex1");
 
         final DataTranslation dataTranslation = new DataTranslation(engine);
 
         final FrameBuffer mainFrame = new FrameBuffer(frameShader, 2, width, height, getSubWindowVertices(0f, 0f, 1f, 1f));
-        final FrameBuffer secondaryFrameUR = new FrameBuffer(frameShader, 2, width, height, getSubWindowVertices(0.75f, 0.75f, 0.25f, 0.25f));
-        final FrameBuffer secondaryFrameUL = new FrameBuffer(frameShader, 2, width, height, getSubWindowVertices(-0.75f, 0.75f, 0.25f, 0.25f));
+        final FrameBuffer secondaryFrameUR = new FrameBuffer(testFrameShader, 3, width, height, getSubWindowVertices(0.75f, 0.75f, 0.25f, 0.25f));
+        final FrameBuffer secondaryFrame = new FrameBuffer(frameShader2, 4, width, height, getSubWindowVertices(0f, 0f, 1f, 1f));
+        final FrameBuffer secondaryFrame2 = new FrameBuffer(frameShader3, 5, width, height, getSubWindowVertices(0f, 0f, 1f, 1f));
+        final FrameBuffer secondaryFrame3 = new FrameBuffer(frameShader4, 6, width, height, getSubWindowVertices(0f, 0f, 1f, 1f));
 
+        final Vector3f mirror = new Vector3f(0.0f, 1.0f, 0.0f);
+        final Vector3f mirrorNormal = new Vector3f(1.0f, 0.0f, 0.0f);
 
         while (!glfwWindowShouldClose(window) && controller.status == Mode.RUNNING) {
             controller.handleInput(window);
+
+            Vector3f mirrorCameraVec = new Vector3f(mirror).sub(camera.position).reflect(mirrorNormal);
+            Vector3f mirrorCameraPos = new Vector3f(mirror).sub(mirrorCameraVec);
+
+            secondaryFrame.renderSubFrame(() ->{
+                glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
+                textureMap.bind();
+                reflectMap.bind();
+
+                dataTranslation.update(RenderingType.Texture);
+                shader.activate();
+                shader.transferCamera(new Camera(1900, 1000, mirrorCameraPos, mirrorCameraVec));
+                shader.translateLightPoints(engine.lightPoints);
+                shader.translate1f("ambient", ambLight);
+                dataTranslation.setupVAO();
+
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+            });
+
+            secondaryFrame2.renderSubWindow(() -> {
+                glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
+                textureMap.bind();
+                reflectMap.bind();
+
+                dataTranslation.update(RenderingType.Texture);
+                mirrorShader.activate();
+                glUniform1i(glGetUniformLocation(mirrorShader.getId(), "mirrorTex"), 4);
+                mirrorShader.transferCamera(new Camera(1900, 1000, mirrorCameraPos, mirrorCameraVec));
+                mirrorShader.translateLightPoints(engine.lightPoints);
+                mirrorShader.translate1f("ambient", ambLight);
+                dataTranslation.setupVAO();
+
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+            });
+
+            secondaryFrame3.renderSubWindow(() -> {
+                glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
+                textureMap.bind();
+                reflectMap.bind();
+
+                dataTranslation.update(RenderingType.Texture);
+                mirrorShader.activate();
+                glUniform1i(glGetUniformLocation(mirrorShader.getId(), "mirrorTex"), 5);
+                mirrorShader.transferCamera(new Camera(1900, 1000, mirrorCameraPos, mirrorCameraVec));
+                mirrorShader.translateLightPoints(engine.lightPoints);
+                mirrorShader.translate1f("ambient", ambLight);
+                dataTranslation.setupVAO();
+
+                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
+            });
 
             mainFrame.renderSubWindow(() -> {
                 glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
@@ -181,10 +246,11 @@ public class Display {
                 reflectMap.bind();
 
                 dataTranslation.update(RenderingType.Texture);
-                shader.activate();
-                shader.transferCamera(camera);
-                shader.translateLightPoints(engine.lightPoints);
-                shader.translate1f("ambient", ambLight);
+                mirrorShader.activate();
+                glUniform1i(glGetUniformLocation(mirrorShader.getId(), "mirrorTex"), 6);
+                mirrorShader.transferCamera(camera);
+                mirrorShader.translateLightPoints(engine.lightPoints);
+                mirrorShader.translate1f("ambient", ambLight);
                 dataTranslation.setupVAO();
 
                 glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
@@ -198,48 +264,12 @@ public class Display {
 
                 dataTranslation.update(RenderingType.Texture);
                 shader.activate();
-                shader.transferCamera(camera);
+                shader.transferCamera(new Camera(1900,1000, mirrorCameraPos, mirrorCameraVec));
                 shader.translateLightPoints(engine.lightPoints);
                 shader.translate1f("ambient", 0.4f);
                 dataTranslation.setupVAO();
 
                 glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
-            });
-
-            secondaryFrameUL.renderSubWindow(() -> {
-                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear the framebuffer
-                textureMap.bind();
-                reflectMap.bind();
-
-                dataTranslation.update(RenderingType.Texture);
-                shader.activate();
-                shader.transferCamera(camera);
-                shader.translateLightPoints(engine.lightPoints);
-                shader.translate1f("ambient", ambLight);
-                dataTranslation.setupVAO();
-
-                glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                glStencilMask(0xFF);
-
-                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Texture), GL_UNSIGNED_INT, 0);
-
-                glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-                glStencilMask(0x00);
-
-
-                glDisable(GL_DEPTH_TEST);
-                dataTranslation.update(RenderingType.Outline);
-                outlineShader.activate();
-                outlineShader.transferCamera(camera);
-                outlineShader.translate1f("outlining", 0.05f);
-                dataTranslation.setupVAO();
-
-                glDrawElements(GL_TRIANGLES, dataTranslation.indicesSize(RenderingType.Outline), GL_UNSIGNED_INT, 0);
-
-                glEnable(GL_DEPTH_TEST);
-                glStencilMask(0xFF);
-                glStencilFunc(GL_ALWAYS, 0, 0xFF);
             });
 
             glfwSwapBuffers(window);

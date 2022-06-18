@@ -48,7 +48,7 @@ public class Texture {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
         try {
-            File imgPath = new File(path);
+            File imgPath = new File("src/main/resources/img/" + path);
             BufferedImage image = ImageIO.read(imgPath);
 
             int[] pixels = new int[image.getWidth() * image.getHeight()];

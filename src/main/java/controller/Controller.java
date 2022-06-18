@@ -26,7 +26,7 @@ public class Controller {
 
     public Controller() {
         engine = new Engine(this, Engine.generateBlockLayer(new Vector3i(0, -2, 0), 25));
-        camera = new Camera(1900, 1000, new Vector3f(0.0f, 0.0f, 2.0f));
+        camera = new Camera(1900, 1000, new Vector3f(0.0f, 0.0f, 2.0f), new Vector3f(0.0f, 0.0f, 1.0f));
         display = new Display(this, engine, camera, 1900, 1000, "test");
         model = new Model(new Vector3f(0f, 0f, 0f), 0.5f, camera);
         commandsSet = new HashSet<>();
