@@ -6,6 +6,7 @@ import controller.Mode;
 import engine.entities.Block;
 import engine.entities.LightPoint;
 import engine.entities.Line;
+import engine.entities.MirrorGlass;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
@@ -20,6 +21,7 @@ public class Engine {
     public final ConcurrentHashMap<Vector3i, Block> blocks;
     public final Set<Line> lines;
     public final Set<LightPoint> lightPoints;
+    public final Set<MirrorGlass> mirrors;
 
     public Engine(Controller controller, Block[] initBlocks) {
         System.out.println("Инициализация EngineRuntime");
@@ -31,6 +33,12 @@ public class Engine {
         lightPoints = new HashSet<>();
         lightPoints.add(new LightPoint(new Vector3f(0.0f, 7.0f, -10.0f), new Vector4f(1.0f, 0.0f, 0.0f, 1.0f)));
         lightPoints.add(new LightPoint(new Vector3f(0.0f, 7.0f, 10.0f), new Vector4f(1.0f, 1.0f, 1.0f, 1.0f)));
+        mirrors = new HashSet<>();
+        mirrors.add(new MirrorGlass(new Vector3f(0.0f, 3.0f, 1.0f), new Vector3f(1.0f, 0.0f, 0.0f),
+                new Vector3f(0.0f, 2.0f, 2.0f),
+                new Vector3f(0.0f, 4.0f, 2.0f),
+                new Vector3f(0.0f, 4.0f, 0.0f),
+                new Vector3f(0.0f, 2.0f, 0.0f)));
         System.out.println("Инициализация EngineRuntime завершена");
     }
 
@@ -117,9 +125,9 @@ public class Engine {
             }
             lastCheckedPos = posI;
         }
-        int sideId = 10;
+        int sideId = 2;
         if (command == Commands.ADD && lastCord != null) {
-            blocks.put(lastCord, new Block(lastCord, 10, new int[]{sideId, sideId, sideId, sideId, sideId, sideId}));
+            blocks.put(lastCord, new Block(lastCord, 2, new int[]{sideId, sideId, sideId, sideId, sideId, sideId}));
             updateBlockSpace(lastCord);
         }
         if (command == Commands.REMOVE && selectedCord != null) {

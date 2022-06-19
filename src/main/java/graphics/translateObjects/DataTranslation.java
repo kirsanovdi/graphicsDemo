@@ -3,8 +3,12 @@ package graphics.translateObjects;
 import engine.Engine;
 import engine.entities.Block;
 import engine.entities.Line;
+import engine.entities.MirrorGlass;
+import graphics.Mirror;
 import graphics.RenderingType;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class DataTranslation {
 
@@ -37,10 +41,9 @@ public class DataTranslation {
         for (Block block : engine.blocks.values()) {
             transferBlock(block);
         }
-        synchronized (engine.lines) {
-            for (Line line : engine.lines) {
-                transferLine(line);
-            }
+
+        for (MirrorGlass mirrorGlass : engine.mirrors) {
+            transferMirror(mirrorGlass, 10);
         }
 
         vertexArrayObject.bind();
@@ -72,8 +75,8 @@ public class DataTranslation {
         return cords;
     }
 
-    public int[] getIndices(RenderingType type){
-        return switch (type){
+    public int[] getIndices(RenderingType type) {
+        return switch (type) {
             case Texture -> getTextureIndices();
             case Outline -> getOutlineIndices();
             default -> null;
@@ -95,7 +98,7 @@ public class DataTranslation {
     /**
      * Добавление нового пакета данных в массиы значений и индексов
      *
-     * @param cords   массив добавляемых значений вершин
+     * @param cords массив добавляемых значений вершин
      */
     private void transfer(float[] cords, int[] indicesTexture, int[] indicesOutline) {
         System.arraycopy(cords, 0, cordsRaw, sizeC, cords.length);
@@ -114,11 +117,33 @@ public class DataTranslation {
     }
 
     public int indicesSize(RenderingType type) {
-        return switch (type){
+        return switch (type) {
             case Texture -> sizeITexture;
             case Outline -> sizeIOutline;
             default -> 0;
         };
+    }
+
+    public void transferTriangleDirect(Vector3f a, Vector3f b, Vector3f c, float x1, float y1, float x2, float y2, float x3, float y3, long id, boolean upper) {
+        final float metaID = (float) id;
+
+        final float[] tempCordsRaw = upper ? new float[]{
+                a.x, a.y, a.z, x1, y1, metaID,
+                b.x, b.y, b.z, x2, y2, metaID,
+                c.x, c.y, c.z, x3, y3, metaID,
+        } : new float[]{
+                a.x, a.y, a.z, x3, y3, metaID,
+                b.x, b.y, b.z, x2, y2, metaID,
+                c.x, c.y, c.z, x1, y1, metaID,
+        };
+        final int[] tempIndicesTextureRaw = new int[]{
+                verticesCount, verticesCount + 2, verticesCount + 1,
+        };
+        final int[] tempIndicesOutlineRaw = new int[]{
+                verticesCount, verticesCount + 2, verticesCount + 1,
+        };
+        verticesCount += 3;
+        transfer(tempCordsRaw, tempIndicesTextureRaw, tempIndicesOutlineRaw);
     }
 
     /**
@@ -130,9 +155,9 @@ public class DataTranslation {
      * @param id id стороны
      */
     public void transferTriangle(Vector3f a, Vector3f b, Vector3f c, long id, boolean upper) {
-        final float yId = id == 10?0:(float) (id / 16L) / 16.0f;
-        final float xId = id == 10?0:(float) (id % 16L) / 16.0f;
-        final float delta = id == 10?1.0f:1.0f / 16.0f;
+        final float yId = id == 10 ? 0 : (float) (id / 16L) / 16.0f;
+        final float xId = id == 10 ? 0 : (float) (id % 16L) / 16.0f;
+        final float delta = id == 10 ? 1.0f : 1.0f / 16.0f;
         final float metaID = (float) id;
 
         final float[] tempCordsRaw = upper ? new float[]{
@@ -159,6 +184,28 @@ public class DataTranslation {
     public void transferSquare(Vector3f a, Vector3f b, Vector3f c, Vector3f d, long id) {
         transferTriangle(a, b, c, id, true);
         transferTriangle(c, d, a, id, false);
+    }
+
+    public void transferMirror(MirrorGlass mirrorGlass, long id) {
+        if (mirrorGlass.mirror.camera.matrix4f != null) {
+            Vector3f v1 = mirrorGlass.a, v2 = mirrorGlass.b, v3 = mirrorGlass.c, v4 = mirrorGlass.d;
+            Vector4f r1 = new Vector4f(v1.x, v1.y, v1.z, 1f),
+                    r2 = new Vector4f(v2.x, v2.y, v2.z, 1f),
+                    r3 = new Vector4f(v3.x, v3.y, v3.z, 1f),
+                    r4 = new Vector4f(v4.x, v4.y, v4.z, 1f);
+            Vector4f xA = new Matrix4f(mirrorGlass.mirror.camera.matrix4f).transform(r1); xA.div(xA.w);
+            Vector4f xB = new Matrix4f(mirrorGlass.mirror.camera.matrix4f).transform(r2); xB.div(xB.w);
+            Vector4f xC = new Matrix4f(mirrorGlass.mirror.camera.matrix4f).transform(r3); xC.div(xC.w);
+            Vector4f xD = new Matrix4f(mirrorGlass.mirror.camera.matrix4f).transform(r4); xD.div(xD.w);
+            //System.out.println(xC.w + "\t" + xA.x + "\t" + xA.y + "\t;\t" + xB.x + "\t" + xB.y + "\t;\t" + xC.x + "\t" + xC.y+ "\t;\t" + xD.x + "\t" + xD.y);
+            if(xA.x < 1f && xA.y < 1f && xB.x < 1f && xB.y < 1f && xC.x < 1f && xC.y < 1f && xD.x < 1f && xD.y < 1f) {
+                //transferTriangleDirect(v1, v2, v3, 0f, 0f, 0f, 1f, 1f, 1f, id, true);
+                //transferTriangleDirect(v3, v4, v1, 0f, 0f, 1f, 0f, 1f, 1f, id, false);
+                //1.0	0.39569312	-0.39722523	;	0.41758934	0.41576263	;	-0.3969634	0.39850032	;	-0.3771254	-0.37547576
+                transferTriangleDirect(v1, v2, v3, 0.5f + xA.x/2f, 0.5f + xA.y/2f, 0.5f + xB.x/2f, 0.5f + xB.y/2f, 0.5f + xC.x/2f, 0.5f + xC.y/2f, id, true);
+                transferTriangleDirect(v3, v4, v1, 0.5f + xC.x/2f, 0.5f + xC.y/2f, 0.5f + xD.x/2f, 0.5f + xD.y/2f, 0.5f + xA.x/2f, 0.5f + xA.y/2f, id, true);
+            }//ABC ABD ACB ACD ADB ADC | BAC BAD BCA BCD BDA BDC | CAB CAD CBA CBD CDA CDB | DAB DAC DBA DBC DCA DCB
+        }
     }
 
     /**

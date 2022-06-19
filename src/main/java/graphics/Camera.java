@@ -21,7 +21,7 @@ public class Camera {
     private static final float pi = 3.14159265359f;
     private boolean firstClick;
     private boolean cursorHookHandler = true;
-
+    public Matrix4f matrix4f;
 
     public Camera(int width, int height, Vector3f position, Vector3f orientation) {
         up = new Vector3f(0.0f, 1.0f, 0.0f);
@@ -39,10 +39,12 @@ public class Camera {
         Matrix4f proj = new Matrix4f();
         proj = proj.perspective(FOVdeg / 180.0f * pi, (float) (width / height), nearPlane, farPlane);
 
+        matrix4f = proj.mul(view);
+
         int projLoc = glGetUniformLocation(shader.getId(), uniform);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            glUniformMatrix4fv(projLoc, false, proj.mul(view).get(stack.mallocFloat(16)));
+            glUniformMatrix4fv(projLoc, false, matrix4f.get(stack.mallocFloat(16)));
         } catch (Exception e) {
             System.out.println(e + " error in Camera");
         }
@@ -52,6 +54,12 @@ public class Camera {
         this.position.x = position.x;
         this.position.y = position.y;
         this.position.z = position.z;
+    }
+
+    public void setVec(Vector3f orientation) {
+        this.orientation.x = orientation.x;
+        this.orientation.y = orientation.y;
+        this.orientation.z = orientation.z;
     }
 
     public void mouseInput(long window) {
